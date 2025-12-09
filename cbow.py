@@ -12,4 +12,5 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
-from tqdm import tqdm_notebook
+from tqdm.notebook import tqdm
+
