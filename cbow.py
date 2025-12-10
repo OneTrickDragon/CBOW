@@ -70,4 +70,35 @@ class Vocabulary(object):
         def __len__(self):
             return len(self._token_to_idx)
 
- 
+class CBOWVectorizer(object):
+    def __init__(self, cbow_vocab):
+        self.cbow_vocab = cbow_vocab
+    
+    def vectorize(self, context, vector_length=-1):
+        indicies = [self.cbow_vocab.lookup_token(token) for token in context.split(' ')]
+
+        if vector_length < 0:
+            vector_length = len(indicies)
+
+        out_vector = np.zeros(vector_length, dtype=np.int64)
+        out_vector[:len(indicies)] = indicies
+        out_vector[len(indicies):] = self.cbow_vocab.mask_index
+
+        return out_vector
+    
+    @classmethod
+    def from_dataframe(cls, cbow_df):
+        cbow_vocab = Vocabulary()
+        for index, row in cbow_df.iterrows():
+            for token in row.context.split(' '):
+                cbow_vocab.add_token(token)
+            cbow_vocab.add_token(row.target)
+        return cls(cbow_vocab)
+    
+    @classmethod
+    def from_serializable(cls, contents):
+        cbow_vocab = Vocabulary.from_serializable(contents['cbow_vocab'])
+        return cls(cbow_vocab=cbow_vocab)
+    
+    def to_serializable(self):
+        return {'cbow_vocab': self.cbow_vocab.to_serializable()}
