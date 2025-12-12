@@ -102,3 +102,10 @@ class CBOWVectorizer(object):
     
     def to_serializable(self):
         return {'cbow_vocab': self.cbow_vocab.to_serializable()}
+
+class CBOWDataset(Dataset):
+    def __init__(self, cbow_df, vectorizer):
+        self.cbow_df = cbow_df
+        self._vectorizer = vectorizer
+
+        
