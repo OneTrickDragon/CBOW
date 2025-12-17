@@ -202,3 +202,7 @@ def generate_batches(dataset, batch_size, shuffle=True,
         for name, tensor in data_dict.items():
             out_data_dict[name] = data_dict[name].to(device)
         yield out_data_dict
+
+
+class CBOWClassifier(nn.Module):
+    
