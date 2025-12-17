@@ -205,4 +205,80 @@ def generate_batches(dataset, batch_size, shuffle=True,
 
 
 class CBOWClassifier(nn.Module):
-    
+    def __init__(self, vocabulary_size, embedding_size, padding_idx=0):
+        super(CBOWClassifier, self).__init__()
+        self.embedding = nn.Embedding(num_embeddings=vocabulary_size,
+                                      embedding_dim=embedding_size,
+                                      padding_idx=padding_idx)
+        
+        self.fc1 = nn.Linear(in_features=embedding_size, out_features=vocabulary_size)
+
+        def forward(self, x_in, apply_softmax=False):
+            x_embedded_sum = F.dropout(self.embedding(x_in).sum(dim=1),0.3)
+            y_out = self.fc1(x_embedded_sum)
+
+            if apply_softmax:
+                y_out = F.softmax(y_out, dim=1)
+            return y_out
+
+
+def make_train_state(args):
+    return {'stop_early': False,
+            'early_stopping_step': 0,
+            'early_stopping_best_val': 1e8,
+            'learning_rate': args.learning_rate,
+            'epoch_index': 0,
+            'train_loss': [],
+            'train_acc': [],
+            'val_loss': [],
+            'val_acc': [],
+            'test_loss': -1,
+            'test_acc': -1,
+            'model_filename': args.model_state_file}
+
+def update_train_state(args, model, train_state):
+    """Handle the training state updates.
+
+    Components:
+     - Early Stopping: Prevent overfitting.
+     - Model Checkpoint: Model is saved if the model is better
+
+    :param args: main arguments
+    :param model: model to train
+    :param train_state: a dictionary representing the training state values
+    :returns:
+        a new train_state
+    """
+
+    # Save one model at least
+    if train_state['epoch_index'] == 0:
+        torch.save(model.state_dict(), train_state['model_filename'])
+        train_state['stop_early'] = False
+
+    # Save model if performance improved
+    elif train_state['epoch_index'] >= 1:
+        loss_tm1, loss_t = train_state['val_loss'][-2:]
+
+        # If loss worsened
+        if loss_t >= train_state['early_stopping_best_val']:
+            # Update step
+            train_state['early_stopping_step'] += 1
+        # Loss decreased
+        else:
+            # Save the best model
+            if loss_t < train_state['early_stopping_best_val']:
+                torch.save(model.state_dict(), train_state['model_filename'])
+
+            # Reset early stopping step
+            train_state['early_stopping_step'] = 0
+
+        # Stop early ?
+        train_state['stop_early'] = \
+            train_state['early_stopping_step'] >= args.early_stopping_criteria
+
+    return train_state
+
+def compute_accuracy(y_pred, y_target):
+    _, y_pred_indices = y_pred.max(dim=1)
+    n_correct = torch.eq(y_pred_indices, y_target).sum().item()
+    return n_correct / len(y_pred_indices) * 100
