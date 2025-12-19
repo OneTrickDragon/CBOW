@@ -292,3 +292,52 @@ def set_seed_everywhere(seed, cuda):
 def handle_dirs(dirpath):
     if not os.path.exists(dirpath):
         os.makedirs(dirpath)
+
+
+args = Namespace(
+    # Data and Path information
+    cbow_csv="data/books/frankenstein_with_splits.csv",
+    vectorizer_file="vectorizer.json",
+    model_state_file="model.pth",
+    save_dir="model_storage/ch5/cbow",
+    # Model hyper parameters
+    embedding_size=50,
+    # Training hyper parameters
+    seed=1337,
+    num_epochs=100,
+    learning_rate=0.0001,
+    batch_size=32,
+    early_stopping_criteria=5,
+    # Runtime options
+    cuda=True,
+    catch_keyboard_interrupt=True,
+    reload_from_files=False,
+    expand_filepaths_to_save_dir=True
+)
+
+if args.expand_filepaths_to_save_dir:
+    args.vectorizer_file = os.path.join(args.save_dir,
+                                        args.vectorizer_file)
+
+    args.model_state_file = os.path.join(args.save_dir,
+                                         args.model_state_file)
+    
+    print("Expanded filepaths: ")
+    print("\t{}".format(args.vectorizer_file))
+    print("\t{}".format(args.model_state_file))
+    
+
+# Check CUDA
+if not torch.cuda.is_available():
+    args.cuda = False
+
+args.device = torch.device("cuda" if args.cuda else "cpu")
+    
+print("Using CUDA: {}".format(args.cuda))
+
+
+# Set seed for reproducibility
+set_seed_everywhere(args.seed, args.cuda)
+
+# handle dirs
+handle_dirs(args.save_dir)
