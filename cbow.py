@@ -341,3 +341,18 @@ set_seed_everywhere(args.seed, args.cuda)
 
 # handle dirs
 handle_dirs(args.save_dir)
+
+
+if args.reload_from_files:
+    print("Loading dataset and loading vectorizer")
+    dataset = CBOWDataset.load_dataset_and_load_vectorizer(args.cbow_csv,
+                                                           args.vectorizer_file)
+else:
+    print("Loading dataset and creating vectorizer")
+    dataset = CBOWDataset.load_dataset_and_make_vectorizer(args.cbow_csv)
+    dataset.save_vectorizer(args.vectorizer_file)
+    
+vectorizer = dataset.get_vectorizer()
+
+classifier = CBOWClassifier(vocabulary_size=len(vectorizer.cbow_vocab), 
+                            embedding_size=args.embedding_size)
