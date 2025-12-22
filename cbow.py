@@ -356,3 +356,27 @@ vectorizer = dataset.get_vectorizer()
 
 classifier = CBOWClassifier(vocabulary_size=len(vectorizer.cbow_vocab), 
                             embedding_size=args.embedding_size)
+
+
+loss_func = nn.CrossEntropyLoss()
+optimizer = optim.Adam(classifier.parameters(), lr=args.learning_rate)
+scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer=optimizer,
+                                                 mode='min', factor=0.5,
+                                                 patience=1)
+train_state = make_train_state(args)
+
+epoch_bar = tqdm(desc='training routine', 
+                          total=args.num_epochs,
+                          position=0)
+
+dataset.set_split('train')
+train_bar = tqdm(desc='split=train',
+                          total=dataset.get_num_batches(args.batch_size), 
+                          position=1, 
+                          leave=True)
+dataset.set_split('val')
+val_bar = tqdm(desc='split=val',
+                        total=dataset.get_num_batches(args.batch_size), 
+                        position=1, 
+                        leave=True)
+
