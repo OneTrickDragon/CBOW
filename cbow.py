@@ -473,3 +473,79 @@ try:
         epoch_bar.update()
 except KeyboardInterrupt:
     print("Exiting loop")
+
+
+
+
+classifier.load_state_dict(torch.load(train_state['model_filename']))
+classifier = classifier.to(args.device)
+loss_func = nn.CrossEntropyLoss()
+
+dataset.set_split('test')
+batch_generator = generate_batches(dataset, 
+                                   batch_size=args.batch_size, 
+                                   device=args.device)
+running_loss = 0.
+running_acc = 0.
+classifier.eval()
+
+for batch_index, batch_dict in enumerate(batch_generator):
+    # compute the output
+    y_pred =  classifier(x_in=batch_dict['x_data'])
+    
+    # compute the loss
+    loss = loss_func(y_pred, batch_dict['y_target'])
+    loss_t = loss.item()
+    running_loss += (loss_t - running_loss) / (batch_index + 1)
+
+    # compute the accuracy
+    acc_t = compute_accuracy(y_pred, batch_dict['y_target'])
+    running_acc += (acc_t - running_acc) / (batch_index + 1)
+
+train_state['test_loss'] = running_loss
+train_state['test_acc'] = running_acc
+
+print("Test loss: {};".format(train_state['test_loss']))
+print("Test Accuracy: {}".format(train_state['test_acc']))
+
+def pretty_print(results):
+    """
+    Pretty print embedding results.
+    """
+    for item in results:
+        print ("...[%.2f] - %s"%(item[1], item[0]))
+
+def get_closest(target_word, word_to_idx, embeddings, n=5):
+    """
+    Get the n closest
+    words to your word.
+    """
+
+    # Calculate distances to all other words
+    
+    word_embedding = embeddings[word_to_idx[target_word.lower()]]
+    distances = []
+    for word, index in word_to_idx.items():
+        if word == "<MASK>" or word == target_word:
+            continue
+        distances.append((word, torch.dist(word_embedding, embeddings[index])))
+    
+    results = sorted(distances, key=lambda x: x[1])[1:n+2]
+    return results
+
+word = input('Enter a word: ')
+embeddings = classifier.embedding.weight.data
+word_to_idx = vectorizer.cbow_vocab._token_to_idx
+pretty_print(get_closest(word, word_to_idx, embeddings, n=5))
+
+target_words = ['frankenstein', 'monster', 'science', 'sickness', 'lonely', 'happy']
+
+embeddings = classifier.embedding.weight.data
+word_to_idx = vectorizer.cbow_vocab._token_to_idx
+
+for target_word in target_words: 
+    print(f"======={target_word}=======")
+    if target_word not in word_to_idx:
+        print("Not in vocabulary")
+        continue
+    pretty_print(get_closest(target_word, word_to_idx, embeddings, n=5))
