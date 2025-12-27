@@ -23,3 +23,12 @@ tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
 with open(args.raw_dataset_txt) as fp:
     book = fp.read()
 sentences = tokenizer.tokenize(book)
+
+print (len(sentences), "sentences")
+print ("Sample:", sentences[100])
+
+def preprocess_text(text):
+    text = ' '.join(word.lower() for word in text.split(" "))
+    text = re.sub(r"([.,!?])", r" \1 ", text)
+    text = re.sub(r"[^a-zA-Z.,!?]+", r" ", text)
+    return text
