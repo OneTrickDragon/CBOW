@@ -18,3 +18,8 @@ args = Namespace(
     output_munged_csv="data/books/frankenstein_with_splits.csv",
     seed=9248
 )
+
+tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
+with open(args.raw_dataset_txt) as fp:
+    book = fp.read()
+sentences = tokenizer.tokenize(book)
