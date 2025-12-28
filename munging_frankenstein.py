@@ -32,3 +32,26 @@ def preprocess_text(text):
     text = re.sub(r"([.,!?])", r" \1 ", text)
     text = re.sub(r"[^a-zA-Z.,!?]+", r" ", text)
     return text
+
+cleaned_sentences = [preprocess_text(sentence) for sentence in sentences]
+MASK_TOKEN = "<MASK>"
+
+flatten = lambda outer_list: [item for inner_list in outer_list for item in inner_list]
+windows = flatten([list(nltk.ngrams([MASK_TOKEN] * args.window_size + sentence.split(' ') + \
+    [MASK_TOKEN] * args.window_size, args.window_size * 2 + 1)) \
+    for sentence in tqdm(cleaned_sentences)])
+
+# Create cbow data
+data = []
+for window in tqdm(windows):
+    target_token = window[args.window_size]
+    context = []
+    for i, token in enumerate(window):
+        if token == MASK_TOKEN or i == args.window_size:
+            continue
+        else:
+            context.append(token)
+    data.append([' '.join(token for token in context), target_token])
+    
+            
+cbow_data = pd.DataFrame(data, columns=["context", "target"])
